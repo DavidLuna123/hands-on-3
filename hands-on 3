@@ -1,0 +1,138 @@
+// Clase principal
+public class DiscreteMaths {
+    public static void main(String[] args) {
+
+        // Dataset cargado
+        ChemicalDataSet data = new ChemicalDataSet();
+
+        // Modelo de regresión cuadrática
+        RegresionCuadratica modelo = new RegresionCuadratica(data.getDatos());
+
+        double[] beta = modelo.calcularRegresion();
+
+        System.out.println("Parámetros del modelo:");
+        System.out.println("Beta0 = " + beta[0]);
+        System.out.println("Beta1 = " + beta[1]);
+        System.out.println("Beta2 = " + beta[2]);
+
+        System.out.println("\nEcuación de regresión:");
+        System.out.println("y = " + beta[0] + "X1^2 + " + beta[1] + "X1 + " + beta[2]);
+
+        System.out.println("\nResultados en cada observación:");
+        double[][] datos = data.getDatos();
+
+        for (int i = 0; i < datos.length; i++) {
+            double x1 = datos[i][0];
+            double yReal = datos[i][1];
+            double yPred = modelo.predicciones(x1, beta);
+
+            System.out.println("--Observacion  " + (i + 1) + ": x1 = " + x1 +" |///| Yield real = " + yReal + " |///| simulacion == " + yPred + "\n----------------------------------------------------------------------- \n");
+        }
+    }
+}
+
+public class RegresionCuadratica {
+
+    private double[][] datos;
+
+    public RegresionCuadratica(double[][] datos) {
+        this.datos = datos;
+    }
+
+    public double[] calcularRegresion() {
+        double sumX = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0;
+        double sumY = 0, sumXY = 0, sumX2Y = 0;
+
+        int n = datos.length;
+
+        for (int i = 0; i < n; i++) {
+            double x = datos[i][0];
+            double y = datos[i][1];
+
+            sumX += x;
+            sumX2 += x * x;
+            sumX3 += x * x * x;
+            sumX4 += x * x * x * x;
+
+            sumY += y;
+            sumXY += x * y;
+            sumX2Y += x * x * y;
+        }
+
+        double[][] A = {
+                {n, sumX, sumX2},
+                {sumX, sumX2, sumX3},
+                {sumX2, sumX3, sumX4}
+        };
+
+        double[] B = {sumY, sumXY, sumX2Y};
+
+        return resolverSistema(A, B);
+    }
+
+    private double[] resolverSistema(double[][] A, double[] B) {
+        double detA = determinante(A);
+
+        double[] X = new double[3];
+        double[][] A1 = reemplazarColumna(A, B, 0);
+        double[][] A2 = reemplazarColumna(A, B, 1);
+        double[][] A3 = reemplazarColumna(A, B, 2);
+
+        X[0] = determinante(A1) / detA;
+        X[1] = determinante(A2) / detA;
+        X[2] = determinante(A3) / detA;
+
+        return X;
+    }
+
+    private double determinante(double[][] A) {
+        return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1])
+                - A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0])
+                + A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+    }
+
+    private double[][] reemplazarColumna(double[][] A, double[] B, int col) {
+        double[][] nueva = new double[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                nueva[i][j] = (j == col) ? B[i] : A[i][j];
+            }
+        }
+        return nueva;
+    }
+
+    public double predicciones(double X, double[] beta) {
+        return beta[0] * X * X + beta[1] * X + beta[2];
+    }
+}
+
+public class ChemicalDataSet {
+
+    private double[][] datos;
+
+    public ChemicalDataSet() {
+        // Estructura: {Factor 1 (x1), Yield (y)}
+        datos = new double[][]{
+                {43.4, 251.3},
+                {43.9, 248.3},
+                {44.5, 267.5},
+                {47.3, 273.0},
+                {47.5, 276.5},
+                {47.9, 270.3},
+                {50.2, 274.9},
+                {52.8, 285.0},
+                {53.2, 290.0},
+                {56.7, 297.0},
+                {57.0, 302.5},
+                {63.5, 304.5},
+                {65.3, 309.3},
+                {71.1, 321.7},
+                {77.0, 330.7},
+                {77.8, 349.0}
+        };
+    }
+
+    public double[][] getDatos() {
+        return datos;
+    }
+}
